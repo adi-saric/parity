@@ -82,8 +82,9 @@ enum Node<H> {
 impl<I> Node<I> where I: AsRef<[u8]> + AsMut<[u8]> + Default + HeapSizeOf + Debug + PartialEq + Eq + Hash + Send + Sync + Clone + Copy {
 	// load an inline node into memory or get the hash to do the lookup later.
 	fn inline_or_hash<C, H>(node: &[u8], db: &HashDB<H>, storage: &mut NodeStorage<H::Out>) -> NodeHandle<H::Out>
-	where C: NodeCodec<H::Out>,
-		  H: Hasher<Out = I>,
+	where
+		C: NodeCodec<H::Out>,
+		H: Hasher<Out = I>,
 	{
 		C::try_decode_hash(&node)
 			.map(NodeHandle::Hash)
@@ -95,8 +96,9 @@ impl<I> Node<I> where I: AsRef<[u8]> + AsMut<[u8]> + Default + HeapSizeOf + Debu
 
 	// decode a node from encoded bytes without getting its children.
 	fn from_encoded<C, H>(data: &[u8], db: &HashDB<H>, storage: &mut NodeStorage<H::Out>) -> Self
-	where C: NodeCodec<H::Out>,
-		  H: Hasher<Out = I>,
+	where
+		C: NodeCodec<H::Out>,
+		H: Hasher<Out = I>,
 	{
 		match C::decode(data).expect("encoded bytes read from db; qed") {
 			EncodedNode::Empty => Node::Empty,

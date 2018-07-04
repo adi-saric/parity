@@ -14,28 +14,27 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Generic trait for trie node encoding/decoding. Takes a `hashdb::Hasher` 
+//! Generic trait for trie node encoding/decoding. Takes a `hashdb::Hasher`
 //! to parametrize the hashes used in the codec.
 
-use hashdb::Hasher;
 use node::Node;
 use ChildReference;
 
 use elastic_array::{ElasticArray1024, ElasticArray128};
 
 /// Trait for trie node encoding/decoding
-pub trait NodeCodec<H: Hasher>: Sized {
+pub trait NodeCodec<H>: Sized {
 	/// Encoding error type
 	type Error: ::std::error::Error;
 
 	/// Null node type
-	const HASHED_NULL_NODE: H::Out;
-	
+	const HASHED_NULL_NODE: H;
+
 	/// Decode bytes to a `Node`. Returns `Self::E` on failure.
 	fn decode(data: &[u8]) -> Result<Node, Self::Error>;
 
 	/// Decode bytes to the `Hasher`s output type.  Returns `None` on failure.
-	fn try_decode_hash(data: &[u8]) -> Option<H::Out>;
+	fn try_decode_hash(data: &[u8]) -> Option<H>;
 
 	/// Check if the provided bytes correspond to the codecs "empty" node.
 	fn is_empty_node(data: &[u8]) -> bool;
@@ -47,9 +46,9 @@ pub trait NodeCodec<H: Hasher>: Sized {
 	fn leaf_node(partial: &[u8], value: &[u8]) -> ElasticArray1024<u8>;
 
 	/// Returns an encoded extension node
-	fn ext_node(partial: &[u8], child_ref: ChildReference<H::Out>) -> ElasticArray1024<u8>;
+	fn ext_node(partial: &[u8], child_ref: ChildReference<H>) -> ElasticArray1024<u8>;
 
-	/// Returns an encoded branch node. Takes an iterator yielding `ChildReference<H::Out>` and an optional value
+	/// Returns an encoded branch node. Takes an iterator yielding `ChildReference<H>` and an optional value
 	fn branch_node<I>(children: I, value: Option<ElasticArray128<u8>>) -> ElasticArray1024<u8>
-	where I: IntoIterator<Item=Option<ChildReference<H::Out>>>;
+	where I: IntoIterator<Item=Option<ChildReference<H>>>;
 }

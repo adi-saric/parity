@@ -82,7 +82,7 @@ enum Node<H> {
 impl<I> Node<I> where I: AsRef<[u8]> + AsMut<[u8]> + Default + HeapSizeOf + Debug + PartialEq + Eq + Hash + Send + Sync + Clone + Copy {
 	// load an inline node into memory or get the hash to do the lookup later.
 	fn inline_or_hash<C, H>(node: &[u8], db: &HashDB<H>, storage: &mut NodeStorage<H::Out>) -> NodeHandle<H::Out>
-	where C: NodeCodec<H>,
+	where C: NodeCodec<H::Out>,
 		  H: Hasher<Out = I>,
 	{
 		C::try_decode_hash(&node)
@@ -95,7 +95,7 @@ impl<I> Node<I> where I: AsRef<[u8]> + AsMut<[u8]> + Default + HeapSizeOf + Debu
 
 	// decode a node from encoded bytes without getting its children.
 	fn from_encoded<C, H>(data: &[u8], db: &HashDB<H>, storage: &mut NodeStorage<H::Out>) -> Self
-	where C: NodeCodec<H>,
+	where C: NodeCodec<H::Out>,
 		  H: Hasher<Out = I>,
 	{
 		match C::decode(data).expect("encoded bytes read from db; qed") {
@@ -131,7 +131,7 @@ impl<I> Node<I> where I: AsRef<[u8]> + AsMut<[u8]> + Default + HeapSizeOf + Debu
 	// TODO: parallelize
 	fn into_encoded<F, C, H>(self, mut child_cb: F) -> ElasticArray1024<u8>
 	where
-		C: NodeCodec<H>,
+		C: NodeCodec<H::Out>,
 		F: FnMut(NodeHandle<H::Out>) -> ChildReference<H::Out>,
 		H: Hasher<Out = I>,
 	{
@@ -287,7 +287,7 @@ impl<'a, H> Index<&'a StorageHandle> for NodeStorage<H> {
 pub struct TrieDBMut<'a, H, C>
 where
 	H: Hasher + 'a,
-	C: NodeCodec<H>
+	C: NodeCodec<H::Out>
 {
 	storage: NodeStorage<H::Out>,
 	db: &'a mut HashDB<H>,
@@ -303,7 +303,7 @@ where
 impl<'a, H, C> TrieDBMut<'a, H, C>
 where
 	H: Hasher,
-	C: NodeCodec<H>
+	C: NodeCodec<H::Out>
 {
 	/// Create a new trie with backing database `db` and empty `root`.
 	pub fn new(db: &'a mut HashDB<H>, root: &'a mut H::Out) -> Self {
@@ -887,7 +887,7 @@ where
 impl<'a, H, C> TrieMut<H, C> for TrieDBMut<'a, H, C>
 where
 	H: Hasher,
-	C: NodeCodec<H>
+	C: NodeCodec<H::Out>
 {
 	fn root(&mut self) -> &H::Out {
 		self.commit();
@@ -957,7 +957,7 @@ where
 impl<'a, H, C> Drop for TrieDBMut<'a, H, C>
 where
 	H: Hasher,
-	C: NodeCodec<H>
+	C: NodeCodec<H::Out>
 {
 	fn drop(&mut self) {
 		self.commit();
@@ -978,7 +978,7 @@ mod tests {
 	use ethereum_types::H256;
 
 	fn populate_trie<'db, H, C>(db: &'db mut HashDB<KeccakHasher>, root: &'db mut H256, v: &[(Vec<u8>, Vec<u8>)]) -> TrieDBMut<'db>
-		where H: Hasher, H::Out: Decodable + Encodable, C: NodeCodec<H>
+		where H: Hasher, H::Out: Decodable + Encodable, C: NodeCodec<H::Out>
 	{
 		let mut t = TrieDBMut::new(db, root);
 		for i in 0..v.len() {
@@ -1015,7 +1015,7 @@ mod tests {
 			let real = trie_root(x.clone());
 			let mut memdb = MemoryDB::<KeccakHasher>::new();
 			let mut root = H256::new();
-			let mut memtrie = populate_trie::<_, RlpCodec>(&mut memdb, &mut root, &x);
+			let mut memtrie = populate_trie::<KeccakHasher, RlpCodec>(&mut memdb, &mut root, &x);
 
 			memtrie.commit();
 			if *memtrie.root() != real {
@@ -1240,12 +1240,12 @@ mod tests {
 			let real = trie_root(x.clone());
 			let mut memdb = MemoryDB::<KeccakHasher>::new();
 			let mut root = H256::new();
-			let mut memtrie = populate_trie::<_, RlpCodec>(&mut memdb, &mut root, &x);
+			let mut memtrie = populate_trie::<KeccakHasher, RlpCodec>(&mut memdb, &mut root, &x);
 			let mut y = x.clone();
 			y.sort_by(|ref a, ref b| a.0.cmp(&b.0));
 			let mut memdb2 = MemoryDB::<KeccakHasher>::new();
 			let mut root2 = H256::new();
-			let mut memtrie_sorted = populate_trie::<_, RlpCodec>(&mut memdb2, &mut root2, &y);
+			let mut memtrie_sorted = populate_trie::<KeccakHasher, RlpCodec>(&mut memdb2, &mut root2, &y);
 			if *memtrie.root() != real || *memtrie_sorted.root() != real {
 				println!("TRIE MISMATCH");
 				println!("");

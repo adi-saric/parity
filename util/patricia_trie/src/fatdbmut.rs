@@ -23,17 +23,17 @@ use node_codec::NodeCodec;
 ///
 /// Use it as a `Trie` or `TrieMut` trait object.
 pub struct FatDBMut<'db, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H>
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out>
 {
 	raw: TrieDBMut<'db, H, C>,
 }
 
 impl<'db, H, C> FatDBMut<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	/// Create a new trie with the backing database `db` and empty `root`
 	/// Initialise to the state entailed by the genesis block.
@@ -61,9 +61,9 @@ where
 }
 
 impl<'db, H, C> TrieMut<H, C> for FatDBMut<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn root(&mut self) -> &H::Out { self.raw.root() }
 

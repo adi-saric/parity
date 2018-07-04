@@ -58,9 +58,9 @@ use std::marker::PhantomData;
 /// }
 /// ```
 pub struct TrieDB<'db, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H>
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out>
 {
 	db: &'db HashDB<H>,
 	root: &'db H::Out,
@@ -70,9 +70,9 @@ where
 }
 
 impl<'db, H, C> TrieDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	/// Create a new trie with the backing database `db` and `root`
 	/// Returns an error if `root` does not exist
@@ -110,7 +110,7 @@ where
 impl<'db, H, C> Trie<H, C> for TrieDB<'db, H, C>
 where
 	H: Hasher,
-	C: NodeCodec<H>
+	C: NodeCodec<H::Out>
 {
 	fn root(&self) -> &H::Out { self.root }
 
@@ -132,18 +132,18 @@ where
 
 // This is for pretty debug output only
 struct TrieAwareDebugNode<'db, 'a, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H> + 'db
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out> + 'db
 {
 	trie: &'db TrieDB<'db, H, C>,
-	key: &'a[u8]
+	key: &'a [u8]
 }
 
 impl<'db, 'a, H, C> fmt::Debug for TrieAwareDebugNode<'db, 'a, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		if let Ok(node) = self.trie.get_raw_or_lookup(self.key) {
@@ -180,9 +180,9 @@ where
 }
 
 impl<'db, H, C> fmt::Debug for TrieDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		let root_rlp = self.db.get(self.root).expect("Trie root not found!");
@@ -224,13 +224,13 @@ impl Crumb {
 }
 
 /// Iterator for going through all values in the trie.
-pub struct TrieDBIterator<'a, H: Hasher + 'a, C: NodeCodec<H> + 'a> {
+pub struct TrieDBIterator<'a, H: Hasher + 'a, C: NodeCodec<H::Out> + 'a> {
 	db: &'a TrieDB<'a, H, C>,
 	trail: Vec<Crumb>,
 	key_nibbles: Bytes,
 }
 
-impl<'a, H: Hasher, C: NodeCodec<H>> TrieDBIterator<'a, H, C> {
+impl<'a, H: Hasher, C: NodeCodec<H::Out>> TrieDBIterator<'a, H, C> {
 	/// Create a new iterator.
 	pub fn new(db: &'a TrieDB<H, C>) -> Result<TrieDBIterator<'a, H, C>, H::Out, C::Error> {
 		let mut r = TrieDBIterator { db, trail: Vec::with_capacity(8), key_nibbles: Vec::with_capacity(64) };
@@ -334,7 +334,7 @@ impl<'a, H: Hasher, C: NodeCodec<H>> TrieDBIterator<'a, H, C> {
 	}
 }
 
-impl<'a, H: Hasher, C: NodeCodec<H>> TrieIterator<H, C> for TrieDBIterator<'a, H, C> {
+impl<'a, H: Hasher, C: NodeCodec<H::Out>> TrieIterator<H, C> for TrieDBIterator<'a, H, C> {
 	/// Position the iterator on the first element with key >= `key`
 	fn seek(&mut self, key: &[u8]) -> Result<(), H::Out, C::Error> {
 		self.trail.clear();
@@ -344,7 +344,7 @@ impl<'a, H: Hasher, C: NodeCodec<H>> TrieIterator<H, C> for TrieDBIterator<'a, H
 	}
 }
 
-impl<'a, H: Hasher, C: NodeCodec<H>> Iterator for TrieDBIterator<'a, H, C> {
+impl<'a, H: Hasher, C: NodeCodec<H::Out>> Iterator for TrieDBIterator<'a, H, C> {
 	type Item = TrieItem<'a, H::Out, C::Error>;
 
 	fn next(&mut self) -> Option<Self::Item> {
@@ -441,7 +441,7 @@ mod tests {
 	#[test]
 	fn iterator_seek() {
 		let d = vec![ DBValue::from_slice(b"A"), DBValue::from_slice(b"AA"), DBValue::from_slice(b"AB"), DBValue::from_slice(b"B") ];
-	
+
 		let mut memdb = MemoryDB::<KeccakHasher>::new();
 		let mut root = H256::new();
 		{
@@ -450,7 +450,7 @@ mod tests {
 				t.insert(x, x).unwrap();
 			}
 		}
-	
+
 		let t = TrieDB::new(&memdb, &root).unwrap();
 		let mut iter = t.iter().unwrap();
 		assert_eq!(iter.next().unwrap().unwrap(), (b"A".to_vec(), DBValue::from_slice(b"A")));

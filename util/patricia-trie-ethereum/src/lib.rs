@@ -33,7 +33,7 @@ use keccak_hasher::KeccakHasher;
 use rlp::DecoderError;
 
 /// Convenience type alias to instantiate a Keccak-flavoured `RlpNodeCodec`
-pub type RlpCodec = RlpNodeCodec<KeccakHasher>;
+pub type RlpCodec = RlpNodeCodec<H256>;
 
 /// Convenience type alias to instantiate a Keccak/Rlp-flavoured `TrieDB`
 pub type TrieDB<'db> = trie::TrieDB<'db, KeccakHasher, RlpCodec>;

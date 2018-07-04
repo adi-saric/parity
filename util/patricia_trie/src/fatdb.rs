@@ -23,17 +23,17 @@ use node_codec::NodeCodec;
 ///
 /// Use it as a `Trie` or `TrieMut` trait object.
 pub struct FatDB<'db, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H>
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out>
 {
 	raw: TrieDB<'db, H, C>,
 }
 
 impl<'db, H, C> FatDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	/// Create a new trie with the backing database `db` and empty `root`
 	/// Initialise to the state entailed by the genesis block.
@@ -47,9 +47,9 @@ where
 }
 
 impl<'db, H, C> Trie<H, C> for FatDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn root(&self) -> &H::Out { self.raw.root() }
 
@@ -70,18 +70,18 @@ where
 
 /// Itarator over inserted pairs of key values.
 pub struct FatDBIterator<'db, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H> + 'db
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out> + 'db
 {
 	trie_iterator: TrieDBIterator<'db, H, C>,
 	trie: &'db TrieDB<'db, H, C>,
 }
 
 impl<'db, H, C> FatDBIterator<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	/// Creates new iterator.
 	pub fn new(trie: &'db TrieDB<H, C>) -> Result<Self, H::Out, C::Error> {
@@ -93,9 +93,9 @@ where
 }
 
 impl<'db, H, C> TrieIterator<H, C> for FatDBIterator<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn seek(&mut self, key: &[u8]) -> Result<(), H::Out, C::Error> {
 		let hashed_key = H::hash(key);
@@ -104,9 +104,9 @@ where
 }
 
 impl<'db, H, C> Iterator for FatDBIterator<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	type Item = TrieItem<'db, H::Out, C::Error>;
 

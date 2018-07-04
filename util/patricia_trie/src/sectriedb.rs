@@ -23,17 +23,17 @@ use node_codec::NodeCodec;
 ///
 /// Use it as a `Trie` trait object. You can use `raw()` to get the backing `TrieDB` object.
 pub struct SecTrieDB<'db, H, C>
-where 
-	H: Hasher + 'db, 
-	C: NodeCodec<H>
+where
+	H: Hasher + 'db,
+	C: NodeCodec<H::Out>
 {
 	raw: TrieDB<'db, H, C>
 }
 
 impl<'db, H, C> SecTrieDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	/// Create a new trie with the backing database `db` and empty `root`
 	///
@@ -56,9 +56,9 @@ where
 }
 
 impl<'db, H, C> Trie<H, C> for SecTrieDB<'db, H, C>
-where 
-	H: Hasher, 
-	C: NodeCodec<H>
+where
+	H: Hasher,
+	C: NodeCodec<H::Out>
 {
 	fn root(&self) -> &H::Out { self.raw.root() }
 

@@ -24,7 +24,7 @@ use super::{Result, TrieError, Query};
 use std::marker::PhantomData;
 
 /// Trie lookup helper object.
-pub struct Lookup<'a, H: Hasher + 'a, C: NodeCodec<H>, Q: Query<H>> {
+pub struct Lookup<'a, H: Hasher + 'a, C: NodeCodec<H::Out>, Q: Query<H>> {
 	/// database to query from.
 	pub db: &'a HashDB<H>,
 	/// Query object to record nodes and transform data.
@@ -37,7 +37,7 @@ pub struct Lookup<'a, H: Hasher + 'a, C: NodeCodec<H>, Q: Query<H>> {
 impl<'a, H, C, Q> Lookup<'a, H, C, Q>
 where
 	H: Hasher + 'a,
-	C: NodeCodec<H> + 'a,
+	C: NodeCodec<H::Out> + 'a,
 	Q: Query<H>,
 {
 	/// Look up the given key. If the value is found, it will be passed to the given
